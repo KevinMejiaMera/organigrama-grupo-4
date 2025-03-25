@@ -1,0 +1,300 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Generador de Organigramas</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #282c34;
+            color: #abb2bf;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            height: 100vh;
+        }
+
+        .container {
+            display: flex;
+            width: 100%;
+            height: 100%;
+        }
+
+        .sidebar {
+            width: 250px;
+            background: #3e4451;
+            padding: 15px;
+            display: flex;
+            flex-direction: column;
+            align-items: stretch;
+            box-shadow: 2px 0 10px rgba(0, 0, 0, 0.3);
+        }
+
+        .form-container {
+            margin-bottom: 15px;
+            padding: 10px;
+            border-radius: 6px;
+            background-color: #525968;
+            box-shadow: 1px 1px 5px rgba(0, 0, 0, 0.2);
+        }
+
+        label {
+            display: block;
+            margin-bottom: 3px;
+            font-size: 0.85em;
+            color: #98c379;
+        }
+
+        input {
+            width: calc(100% - 12px);
+            padding: 6px;
+            margin-top: 3px;
+            border: 1px solid #61697a;
+            border-radius: 3px;
+            outline: none;
+            box-sizing: border-box;
+            background-color: #4a515d;
+            color: #abb2bf;
+        }
+
+        button {
+            background-color: #61afef;
+            color: white;
+            border: none;
+            padding: 8px 14px; /* Aumentamos el padding para hacer los botones más grandes */
+            font-size: 12px; /* Aumentamos el tamaño de la fuente */
+            border-radius: 3px;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+            margin-top: 5px;
+            width: 100%;
+            box-sizing: border-box;
+        }
+
+        button:hover {
+            background-color: #569cd6;
+        }
+
+        button.delete {
+            background-color: #e06c75;
+        }
+
+        button.delete:hover {
+            background-color: #be5046;
+        }
+
+        button.edit {
+            background-color: #d19a66;
+        }
+
+        button.edit:hover {
+            background-color: #c678dd;
+        }
+
+        button.reset {
+            background-color: #c678dd;
+        }
+
+        button.reset:hover {
+            background-color: #9868a0;
+        }
+
+        .content {
+            flex-grow: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        #organigram {
+            background: #3e4451;
+            max-width: 400px;
+            max-height: 400px;
+            padding: 15px;
+            border-radius: 6px;
+            box-shadow: 1px 1px 10px rgba(0, 0, 0, 0.2);
+            text-align: center;
+            border: 2px solid black;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        #orgImage {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+        }
+
+        h2 {
+            font-size: 1.3em;
+            margin-bottom: 15px;
+            color: #e06c75;
+        }
+
+        .top-right-buttons {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            display: flex;
+            flex-direction: column;
+            align-items: flex-end;
+        }
+
+        .top-right-buttons button {
+            margin-top: 5px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="sidebar">
+            <h2>Generador de Organigramas</h2>
+
+            <div class="form-container">
+                <label>Título Principal</label>
+                <input type="text" id="title">
+                <label>Nombre</label>
+                <input type="text" id="name">
+                <label>Jefe</label>
+                <input type="text" id="boss">
+                <button onclick="addPerson()">Agregar</button>
+            </div>
+
+            <div class="form-container">
+                <label>Nombre a eliminar</label>
+                <input type="text" id="deleteName">
+                <button onclick="deletePerson()" class="delete">Eliminar</button>
+            </div>
+
+            <div class="form-container">
+                <label>Nombre actual</label>
+                <input type="text" id="editOldName">
+                <label>Nuevo Nombre</label>
+                <input type="text" id="editNewName">
+                <label>Nuevo Jefe</label>
+                <input type="text" id="editBoss">
+                <button onclick="editPerson()" class="edit">Editar</button>
+            </div>
+
+            <div class="top-right-buttons">
+                <button onclick="updateOrganigram()">Actualizar Organigrama</button>
+                <button onclick="resetOrganigram()" class="reset">Restaurar Organigrama</button>
+                <button onclick="downloadOrganigram()">Guardar Organigrama</button>
+                <button onclick="logout()">Cerrar Sesión</button>
+            </div>
+        </div>
+
+        <div class="content">
+            <div id="organigram">
+                <img id="orgImage" src="" alt="Organigrama">
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function addPerson() {
+            let title = document.getElementById("title").value.trim();
+            let name = document.getElementById("name").value.trim();
+            let boss = document.getElementById("boss").value.trim();
+
+            if (!title) {
+                alert("Por favor, ingresa un título principal.");
+                return;
+            }
+
+            fetch("/add_person", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ title, name, boss })
+            }).then(response => response.json())
+              .then(data => {
+                  if (data.success) {
+                      document.getElementById("orgTitle").textContent = title;
+                      updateOrganigram();
+                  } else {
+                      alert("Error: " + data.error);
+                  }
+              });
+        }
+
+        function deletePerson() {
+            let name = document.getElementById("deleteName").value.trim();
+
+            if (!name) {
+                alert("Por favor, ingresa un nombre a eliminar.");
+                return;
+            }
+
+            fetch("/delete_person", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ name })
+            }).then(response => response.json())
+              .then(data => {
+                  if (data.success) {
+                      alert("Persona eliminada correctamente.");
+                      updateOrganigram();
+                  } else {
+                      alert("Error: " + data.error);
+                  }
+              });
+        }
+
+        function updateOrganigram() {
+            document.getElementById("orgImage").src = "/get_organigram?" + new Date().getTime();
+        }
+
+        function editPerson() {
+            let oldName = document.getElementById("editOldName").value.trim();
+            let newName = document.getElementById("editNewName").value.trim();
+            let newBoss = document.getElementById("editBoss").value.trim();
+
+            if (!oldName || !newName || !newBoss) {
+                alert("Por favor, completa todos los campos.");
+                return;
+            }
+
+            fetch("/edit_person", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ oldName, newName, newBoss })
+            }).then(response => response.json())
+              .then(data => {
+                  if (data.success) {
+                      alert("Persona editada correctamente.");
+                      updateOrganigram();
+                  } else {
+                      alert("Error: " + data.error);
+                  }
+              });
+        }
+
+        function resetOrganigram() {
+            if (confirm("¿Estás seguro de que deseas restaurar el organigrama?")) {
+                fetch("/reset_organigram", { method: "POST" })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.success) {
+                            alert("Organigrama restaurado correctamente.");
+                            updateOrganigram();
+                        } else {
+                            alert("Error: " + data.error);
+                        }
+                    });
+            }
+        }
+
+        function logout() { window.location.href = "/logout"; }
+        function downloadOrganigram() {
+            let link = document.createElement("a");
+            link.href = "/download_organigram";
+            link.download = "organigrama.png";
+            link.click();
+        }
+    </script>
+</body>
+</html>

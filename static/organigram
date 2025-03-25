@@ -1,0 +1,9 @@
+digraph {
+	rankdir=TB splines=ortho
+	kevin [fillcolor=lightblue shape=box style=filled]
+	kevin -> director [constraint=true]
+	sds [fillcolor=lightgray shape=box style=filled]
+	director -> sds [constraint=true]
+	sdss [fillcolor=lightgray shape=box style=filled]
+	sds -> sdss [constraint=true]
+}
